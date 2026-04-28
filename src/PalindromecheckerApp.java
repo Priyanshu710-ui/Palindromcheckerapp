@@ -1,54 +1,131 @@
+import java.util.Scanner;
 import java.util.Stack;
-import java.util.*;
+import java.util.Deque;
+import java.util.ArrayDeque;
 
-// Palindrome service class
-public static class PalindromecheckerApp {
+interface PalindromeStrategy {
+    boolean check(String word);
+    String getStrategyName();
+}
 
-    // Public method to check palindrome
-    public boolean checkPalindrome(String input) {
+class StackStrategy implements PalindromeStrategy {
 
-        if (input == null || input.isEmpty()) {
-            return false; // Empty string not considered
-        }
-
-        // Convert input to lowercase for consistency
-        input = input.toLowerCase();
-
-        // Using Stack internally
+    @Override
+    public boolean check(String word) {
+        String normalized = word.toLowerCase().replaceAll("[^a-z0-9]", "");
         Stack<Character> stack = new Stack<>();
 
-        // Push all characters into the stack
-        for (char c : input.toCharArray()) {
-            stack.push(c);
+        for (int i = 0; i < normalized.length(); i++) {
+            stack.push(normalized.charAt(i));
         }
 
-        // Compare original and reversed via stack
-        for (int i = 0; i < input.length(); i++) {
-            if (input.charAt(i) != stack.pop()) {
+        String stackReversed = "";
+        while (!stack.isEmpty()) {
+            stackReversed = stackReversed + stack.pop();
+        }
+
+        return normalized.equals(stackReversed);
+    }
+
+    @Override
+    public String getStrategyName() {
+        return "Stack Strategy";
+    }
+}
+
+class DequeStrategy implements PalindromeStrategy {
+
+    @Override
+    public boolean check(String word) {
+        String normalized = word.toLowerCase().replaceAll("[^a-z0-9]", "");
+        Deque<Character> deque = new ArrayDeque<>();
+
+        for (int i = 0; i < normalized.length(); i++) {
+            deque.offerLast(normalized.charAt(i));
+        }
+
+        while (deque.size() > 1) {
+            if (deque.pollFirst() != deque.pollLast()) {
                 return false;
             }
         }
 
         return true;
     }
+
+    @Override
+    public String getStrategyName() {
+        return "Deque Strategy";
+    }
 }
 
+class RecursiveStrategy implements PalindromeStrategy {
 
-        public static void main(String[] args) {
+    private boolean isPalindrome(String word, int start, int end) {
+        if (start >= end) return true;
+        if (word.charAt(start) != word.charAt(end)) return false;
+        return isPalindrome(word, start + 1, end - 1);
+    }
 
-            Scanner scanner = new Scanner(System.in);
-            PalindromeChecker checker = new PalindromeChecker(); // Encapsulated service
+    @Override
+    public boolean check(String word) {
+        String normalized = word.toLowerCase().replaceAll("[^a-z0-9]", "");
+        return isPalindrome(normalized, 0, normalized.length() - 1);
+    }
 
-            System.out.print("Enter a string: ");
-            String input = scanner.nextLine();
+    @Override
+    public String getStrategyName() {
+        return "Recursive Strategy";
+    }
+}
 
-            boolean result = checker.checkPalindrome(input);
+class PalindromeContext {
 
-            if (result) {
-                System.out.println("The string is a Palindrome.");
-            } else {
-                System.out.println("The string is NOT a Palindrome.");
-            }
+    private PalindromeStrategy strategy;
 
-            scanner.close();
-        }
+    public PalindromeContext(PalindromeStrategy strategy) {
+        this.strategy = strategy;
+    }
+
+    public void setStrategy(PalindromeStrategy strategy) {
+        this.strategy = strategy;
+    }
+
+    public boolean executeStrategy(String word) {
+        return strategy.check(word);
+    }
+
+    public String getStrategyName() {
+        return strategy.getStrategyName();
+    }
+}
+
+class PalindromeCheckerApp {
+
+    public static void main(String[] args) {
+        System.out.println("--- UC12: Strategy Pattern for Palindrome Algorithms ---");
+
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Input Text: ");
+        String word = scanner.nextLine();
+
+        PalindromeContext context = new PalindromeContext(new StackStrategy());
+        System.out.println("Strategy            : " + context.getStrategyName());
+        System.out.println("Input Text          : " + word);
+        System.out.println("Is it a Palindrome? : " + context.executeStrategy(word));
+        System.out.println();
+
+        context.setStrategy(new DequeStrategy());
+        System.out.println("Strategy            : " + context.getStrategyName());
+        System.out.println("Input Text          : " + word);
+        System.out.println("Is it a Palindrome? : " + context.executeStrategy(word));
+        System.out.println();
+
+        context.setStrategy(new RecursiveStrategy());
+        System.out.println("Strategy            : " + context.getStrategyName());
+        System.out.println("Input Text          : " + word);
+        System.out.println("Is it a Palindrome? : " + context.executeStrategy(word));
+
+        scanner.close();
+    }
+}
